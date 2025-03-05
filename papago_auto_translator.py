@@ -133,16 +133,19 @@ def translate_text(driver, text, expected_source, expected_target):
             driver.execute_script("arguments[0].value = arguments[1];", input_area, text)
             
             # 더미 입력으로 이벤트 트리거
-            input_area.send_keys(" ")  # 공백 추가
-            input_area.send_keys(Keys.BACK_SPACE)  # 공백 제거
+            input_area.send_keys(" ")
+            input_area.send_keys(Keys.BACK_SPACE)
             
             # 번역 버튼 JavaScript 클릭
             driver.find_element(By.ID, "btnTranslate").click()
             
-            # 출력 텍스트 변경 감지 대기
+            # 출력 텍스트 변경 감지 대기 (줄 수 비교 포함)
+            original_line_count = len(text.strip().split('\n'))  # 원본 텍스트 줄 수 계산
+            
             WebDriverWait(driver, 10).until(
                 lambda d: driver.find_element(By.ID, "txtTarget").text.strip() != previous_output
                 and len(driver.find_element(By.ID, "txtTarget").text.strip()) > 5
+                and len(driver.find_element(By.ID, "txtTarget").text.strip().split('\n')) == original_line_count
             )
             
             # 최종 결과 추출
@@ -190,7 +193,7 @@ def main_process():
     root.destroy()
 
     if not original_file:
-        print("🚫 파일 선택이 취소되었습니다. 프로그램을 종료합니다.")
+        input("🚫 파일 선택이 취소되었습니다. 엔터 키를 눌러 프로그램을 종료합니다.")
         sys.exit()
     
     print(f"📄 선택한 텍스트 파일: {original_file}")
@@ -207,7 +210,9 @@ def main_process():
     base_name = os.path.splitext(os.path.basename(original_file))[0]
     split_dir = f"./{base_name}(분할 파일 번역전)"
     translated_dir = f"./{base_name}(분할 파일 번역후 - {target_lang['name']})"
-    final_output = f"./{base_name}({source_lang['name']}→{target_lang['name']} 번역완료).txt"
+    final_output = os.path.abspath(
+    f"{base_name}({source_lang['name']}→{target_lang['name']} 번역완료).txt"
+    )
 
     # 분할 파일 체크 및 생성
     if os.path.exists(split_dir) and os.path.isdir(split_dir):
@@ -294,7 +299,7 @@ def main_process():
     print(f"🎉 최종 파일 저장 완료: {final_output}")
     print("="*40)
     
-    input("번역 완료! 엔터 키를 두 번 눌러 프로그램을 종료하세요.")
+    input("번역 완료! 엔터 키를 눌러 프로그램을 종료합니다.")
 
 if __name__ == "__main__":
     main_process()
